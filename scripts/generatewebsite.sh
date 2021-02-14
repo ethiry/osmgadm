@@ -23,6 +23,9 @@ fi
 rm -rf $WEBSITE_PATH*
 cp -r $WEBBASE_PATH* $WEBSITE_PATH
 
-java -Xmx1024m -cp $OSMGADM_JAR osmgadm.WebsiteBuilder --templatepath=$TEMPLATE_PATH --websitepath=$WEBSITE_PATH --shapepath=$SHAPE_PATH_COMPRESSED --dbname=$DB_NAME --dbhost=$DB_HOST --dbuser=$DB_USER --dbpw=$DB_PW
+pushd src/dist
 
+java -Xmx1024m -cp 'OSMGADM.jar:lib/*' osmgadm.WebsiteBuilder --templatepath=$TEMPLATE_PATH --websitepath=$WEBSITE_PATH --shapepath=$SHAPE_PATH_COMPRESSED --dbname=$DB_NAME --dbhost=$DB_HOST --dbuser=$DB_USER --dbpw=$DB_PW
+
+popd
 

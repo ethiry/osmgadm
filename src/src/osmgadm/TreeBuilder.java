@@ -18,8 +18,11 @@ public class TreeBuilder {
 
     public static String db_name = "osm";
     public static String db_host = "freebsd";
+    public static int db_port = 5433;
+    public static String db_schema = "public";
     public static String db_user = "osm";
     public static String db_pw = "osm";
+
     public static String adminlevel = "2";
     Connection conn;
     public static int NUM_THREADS = 4;
@@ -32,6 +35,7 @@ public class TreeBuilder {
         options.addOption(OptionBuilder.withLongOpt("adminlevel").withDescription("adminlevel (default=2)").hasArg().withArgName("adminlevel").create());
         options.addOption(OptionBuilder.withLongOpt("dbname").withDescription("dbname (default=osm)").hasArg().withArgName("DB NAME").create());
         options.addOption(OptionBuilder.withLongOpt("dbhost").withDescription("dbhost (default=localhost)").hasArg().withArgName("DB HOST").create());
+        options.addOption(OptionBuilder.withLongOpt("dbport").withDescription("dbport (default=5433)").hasArg().withArgName("DB PORT").create());
         options.addOption(OptionBuilder.withLongOpt("dbuser").withDescription("dbuser (default=osm)").hasArg().withArgName("DB USER").create());
         options.addOption(OptionBuilder.withLongOpt("dbpw").withDescription("dbpw (default=osm)").hasArg().withArgName("DB PASSWORD").create());
         options.addOption(OptionBuilder.withLongOpt("numthreads").withDescription("number of parallel worker threads (default=4)").hasArg().withArgName("NUM Threads").create());
@@ -55,6 +59,12 @@ public class TreeBuilder {
             if (line.hasOption("dbhost")) {
                 db_host = line.getOptionValue("dbhost");
             }
+            if (line.hasOption("dbport")) {
+                db_port = Integer.parseInt(line.getOptionValue("dbport"));
+            }
+            if (line.hasOption("dbschema")) {
+                db_schema = line.getOptionValue("dbschema");
+            }
             if (line.hasOption("dbuser")) {
                 db_user = line.getOptionValue("dbuser");
             }
@@ -67,7 +77,7 @@ public class TreeBuilder {
             if (line.hasOption("numthreads")) {
                 NUM_THREADS = Integer.parseInt(line.getOptionValue("numthreads"));
             }
-            Logger.getLogger(TreeBuilder.class.getName()).log(Level.INFO, "Using adminlevel " + adminlevel + " dbname " + db_name + " dbhost " + db_host + " dbuser " + db_user + " dbpw " + db_pw+ "  num threads "+NUM_THREADS);
+            Logger.getLogger(TreeBuilder.class.getName()).log(Level.INFO, "Using adminlevel " + adminlevel + " dbname " + db_name + " dbhost " + db_host + " dbport " + db_port + " dbschema " + db_schema + " dbuser " + db_user + " dbpw " + db_pw+ "  num threads "+NUM_THREADS);
             Logger.getLogger(TreeBuilder.class.getName()).log(Level.INFO, "use --help to list all options");
         } catch (ParseException exp) {
             System.err.println(exp.getMessage());
@@ -89,7 +99,7 @@ public class TreeBuilder {
     public void start() {
 
         try {
-            conn = DriverManager.getConnection("jdbc:postgresql://" + db_host + ":5432/" + db_name, db_user, db_pw);
+            conn = DriverManager.getConnection("jdbc:postgresql://" + db_host + ":" + db_port + "/" + db_name + "?currentSchema=" + db_schema, db_user, db_pw);
 
         } catch (SQLException ex) {
             Logger.getLogger(TreeBuilder.class.getName()).log(Level.SEVERE, null, ex);
@@ -97,7 +107,7 @@ public class TreeBuilder {
 
         try {
             Statement rstmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
-            ResultSet srs = rstmt.executeQuery("select id from relations where  tags->'boundary'='administrative' AND tags->'admin_level'='" + adminlevel + "' AND not tags->'type'='multilinestring';");
+            ResultSet srs = rstmt.executeQuery("select id from relations where tags->'boundary'='administrative' AND tags->'admin_level'='" + adminlevel + "' AND not tags->'type'='multilinestring' AND id not in (select relation_id from tree_world where level='" + adminlevel + "');");
 
             ArrayList<Integer> al_ids = new ArrayList<Integer>();
             while (srs.next()) {
@@ -139,8 +149,7 @@ public class TreeBuilder {
         public UpdatePolyThread(String str) {
             super(str);
             try {
-                conn = DriverManager.getConnection("jdbc:postgresql://" + db_host + ":5432/" + db_name, db_user, db_pw);
-
+                conn = DriverManager.getConnection("jdbc:postgresql://" + db_host + ":" + db_port + "/" + db_name + "?currentSchema=" + db_schema, db_user, db_pw);
             } catch (SQLException ex) {
                 Logger.getLogger(UpdatePolyThread.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -149,13 +158,17 @@ public class TreeBuilder {
         @Override
         public void run() {
             Logger.getLogger(UpdatePolyThread.class.getName()).log(Level.INFO, "Thread " + getName() + " started. Seeded with " + al_ids.size() + " Relations to process");
-
             try {
                 CallableStatement cs_updatepoly = conn.prepareCall("{call updatepoly(?)}");
 
                 for (Integer id : al_ids) {
                     cs_updatepoly.setInt(1, id);
-                    ResultSet srs = cs_updatepoly.executeQuery();
+                    try {
+                        ResultSet srs = cs_updatepoly.executeQuery();
+                    } catch (SQLException ex) {
+                        Logger.getLogger(UpdatePolyThread.class.getName()).log(Level.SEVERE, "Error with relation " + id);
+                    }
+
                 }
 
                 cs_updatepoly.close();

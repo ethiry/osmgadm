@@ -4,3 +4,7 @@ wesite/*
 shapes/*
 shapes_uncompressed/*
 
+bin/
+output/
+website/
+src/**

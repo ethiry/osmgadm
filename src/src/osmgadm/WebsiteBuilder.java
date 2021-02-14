@@ -22,6 +22,7 @@ public class WebsiteBuilder {
     PreparedStatement stmt;
     public static String db_name = "osm";
     public static String db_host = "freebsd";
+    public static int db_port = 5433;
     public static String db_user = "osm";
     public static String db_pw = "osm";
     public static String template_path = "";
@@ -35,6 +36,7 @@ public class WebsiteBuilder {
         Options options = new Options();
         options.addOption(OptionBuilder.withLongOpt("dbname").withDescription("dbname (default=osm)").hasArg().withArgName("DB NAME").create());
         options.addOption(OptionBuilder.withLongOpt("dbhost").withDescription("dbhost (default=localhost)").hasArg().withArgName("DB HOST").create());
+        options.addOption(OptionBuilder.withLongOpt("dbport").withDescription("dbport (default=5433)").hasArg().withArgName("DB PORT").create());
         options.addOption(OptionBuilder.withLongOpt("dbuser").withDescription("dbuser (default=osm)").hasArg().withArgName("DB USER").create());
         options.addOption(OptionBuilder.withLongOpt("dbpw").withDescription("dbpw (default=osm)").hasArg().withArgName("DB PASSWORD").create());
         options.addOption(OptionBuilder.withLongOpt("websitepath").withDescription("path where tree output will be written. path must end with \"/\"").hasArg().withArgName("websitepath").create());
@@ -59,6 +61,9 @@ public class WebsiteBuilder {
             }
             if (line.hasOption("dbhost")) {
                 db_host = line.getOptionValue("dbhost");
+            }
+            if (line.hasOption("dbport")) {
+                db_port = Integer.parseInt(line.getOptionValue("dbport"));
             }
             if (line.hasOption("dbuser")) {
                 db_user = line.getOptionValue("dbuser");
@@ -92,7 +97,7 @@ public class WebsiteBuilder {
                 System.exit(0);
             }
             
-            Logger.getLogger(WebsiteBuilder.class.getName()).log(Level.INFO, "Using websitepath " + website_path + " shapepath " + shape_path + " dbname " + db_name + " dbhost " + db_host + " dbuser " + db_user + " dbpw " + db_pw);
+            Logger.getLogger(WebsiteBuilder.class.getName()).log(Level.INFO, "Using websitepath " + website_path + " shapepath " + shape_path + " dbname " + db_name + " dbhost " + db_host + " dbport " + db_port + " dbuser " + db_user + " dbpw " + db_pw);
             Logger.getLogger(WebsiteBuilder.class.getName()).log(Level.INFO, "use --help to list all options");
         } catch (ParseException exp) {
             System.err.println(exp.getMessage());
@@ -115,7 +120,7 @@ public class WebsiteBuilder {
         Logger.getLogger(WebsiteBuilder.class.getName()).log(Level.INFO, "Generating Tree Views");
         
         try {
-            conn = DriverManager.getConnection("jdbc:postgresql://" + db_host + ":5432/" + db_name, db_user, db_pw);
+            conn = DriverManager.getConnection("jdbc:postgresql://" + db_host + ":" + db_port + "/" + db_name, db_user, db_pw);
             stmtc = conn.prepareStatement("select count(*) from tree_world where parent_id = ?");
             
         } catch (SQLException ex) {
@@ -400,7 +405,7 @@ public class WebsiteBuilder {
     public void writeReport(String path, String name, String desc, String[] columns, String query, int relcol) {
         
         try {
-            conn = DriverManager.getConnection("jdbc:postgresql://" + db_host + ":5432/" + db_name, db_user, db_pw);
+            conn = DriverManager.getConnection("jdbc:postgresql://" + db_host + ":" + db_port + "/" + db_name, db_user, db_pw);
             
         } catch (SQLException ex) {
             Logger.getLogger(WebsiteBuilder.class.getName()).log(Level.SEVERE, null, ex);

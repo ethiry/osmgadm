@@ -1,0 +1,18 @@
+dim 17 nov
+
+create a new postgreSQL server "import1" on port 5433 (in postgres.app)
+# createdb -p 5433 -E UTF8 osmgadm
+
+$ psql -p 5433 -d osmgadm
+# create user osmgadm with password 'osmgadm'
+# grant all to osmgadm
+# create extension postgis
+# create extension hstore;
+# \q
+
+edit config.cfg
+
+$ sh scripts/initdb.sh ./config.cfg
+
+
+user=osmgadm databasae=osmgadm password=osmgadm host=localhost:5433

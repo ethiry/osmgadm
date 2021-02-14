@@ -14,18 +14,22 @@ else
     . $1
 fi
 
-
-psql -d $DB_NAME -h $DB_HOST -U $DB_USER -c "truncate table log;"
-
 echo `date` " Started!"
 
-for i in 2 3 4 5 6 7 8 9 10 11 12 
+pushd ../src/dist
+
+for i in 2 3 4 5 6 7 8 9 10
 do
     
-echo `date` PROCESSING ADMINLEVEL $i
+  echo '---------------------------------------------'  
+	echo `date` PROCESSING ADMINLEVEL $i
 
-java -cp $OSMGADM_JAR osmgadm.TreeBuilder --adminlevel=$i --dbname=$DB_NAME --dbhost=$DB_HOST --dbuser=$DB_USER --dbpw=$DB_PW --numthreads=$NUM_THREADS
+	time java -cp 'OSMGADM.jar:lib/*' osmgadm.TreeBuilder  --adminlevel=$i --dbname=$DB_NAME --dbhost=$DB_HOST --dbport=$DB_PORT --dbuser=$DB_USER --dbpw=$DB_PW --numthreads=$NUM_THREADS
 
+	echo `date` DONE ADMINLEVEL $i
+  echo '---------------------------------------------'  
 done
+
+popd
 
 echo `date` " Finished!"

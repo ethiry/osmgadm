@@ -10,30 +10,52 @@
 # init all osmosis schema creation scripts (snapshot variant)
 # todo: automatically add escape_string_warning = off to postgresql.conf
 
-DBLOCATION=/home/dieter/db/oos
-OSMOSISHOME=/home/dieter/tools/osmosis-0.40.1
-DBNAME=osm
-DBUSERNAME=osm
-DBUSERPASSWORD=osm
+if [ ! -f "$1" ]
+then
+    if [ ! -f config.cfg ]
+    then
+        echo "Could not found config file!"
+        echo "usage: $0 path_to_config"
+        exit
+    else
+        . ./config.cfg
+    fi
+else
+    . $1
+fi
+
+OSMOSISHOME=/usr/local/Cellar/osmosis/0.45/libexec
+
+#DBLOCATION=/home/manu/db/oos
 
 
-/usr/local/etc/rc.d/postgresql stop
+#/usr/local/etc/rc.d/postgresql stop
 
-rm -rf $DBLOCATION/*
-mkdir -p $DBLOCATION
+#rm -rf $DBLOCATION/*
+#mkdir -p $DBLOCATION
 
 
-initdb -E UTF8 -D $DBLOCATION
-/usr/local/etc/rc.d/postgresql start
-createdb -E UTF8 $DBNAME
-createuser -s $DBUSERNAME
-psql -d $DBNAME -c "create extension hstore;"
-psql -d $DBNAME -f /usr/local/share/postgis/contrib/postgis-1.5/postgis.sql
-psql -d $DBNAME -f /usr/local/share/postgis/contrib/postgis-1.5/spatial_ref_sys.sql
-psql -d $DBNAME -f $OSMOSISHOME/script/pgsnapshot_schema_0.6.sql
-psql -d $DBNAME -f $OSMOSISHOME/script/pgsnapshot_schema_0.6_action.sql
-psql -d $DBNAME -f $OSMOSISHOME/script/pgsnapshot_schema_0.6_bbox.sql
-psql -d $DBNAME -f $OSMOSISHOME/script/pgsnapshot_schema_0.6_linestring.sql
+#initdb -E UTF8 -D $DBLOCATION
+#/usr/local/etc/rc.d/postgresql start
+#createdb -E UTF8 $DBNAME
+#createuser -s $DBUSERNAME
+# as superadmin :
+# grant all to $DBUSERNAME
+psql -h $DB_HOST -d $DB_NAME -p $DB_PORT -U $DB_USER -c "create extension postgis;"
+psql -h $DB_HOST -d $DB_NAME -p $DB_PORT -U $DB_USER -c "create extension hstore;"
 
-echo "alter role $DBUSERNAME password '$DBUSERPASSWORD';" | psql -d $DBNAME
-echo "ALTER TABLE geometry_columns OWNER TO $DBUSERNAME; ALTER TABLE spatial_ref_sys OWNER TO $DBUSERNAME;" | psql -d $DBNAME
+#psql -d $DBNAME -f /usr/local/share/postgis/contrib/postgis-1.5/postgis.sql
+#psql -d $DBNAME -f /usr/local/share/postgis/contrib/postgis-1.5/spatial_ref_sys.sql
+
+psql -h $DB_HOST -d $DB_NAME -p $DB_PORT -U $DB_USER -f $OSMOSISHOME/script/pgsnapshot_schema_0.6.sql
+psql -h $DB_HOST -d $DB_NAME -p $DB_PORT -U $DB_USER -f $OSMOSISHOME/script/pgsnapshot_schema_0.6_action.sql
+psql -h $DB_HOST -d $DB_NAME -p $DB_PORT -U $DB_USER -f $OSMOSISHOME/script/pgsnapshot_schema_0.6_bbox.sql
+psql -h $DB_HOST -d $DB_NAME -p $DB_PORT -U $DB_USER -f $OSMOSISHOME/script/pgsnapshot_schema_0.6_linestring.sql
+
+psql -h $DB_HOST -d $DB_NAME -p $DB_PORT -U $DB_USER -f ../sql/inittreeworld.sql
+psql -h $DB_HOST -d $DB_NAME -p $DB_PORT -U $DB_USER -f ../sql/createtree.sql
+psql -h $DB_HOST -d $DB_NAME -p $DB_PORT -U $DB_USER -f ../sql/iso3166-1.sql
+psql -h $DB_HOST -d $DB_NAME -p $DB_PORT -U $DB_USER -f ../sql/iso3166-2.sql
+
+#echo "alter role $DBUSERNAME password '$DBUSERPASSWORD';" | psql -d $DBNAME
+#echo "ALTER TABLE geometry_columns OWNER TO $DBUSERNAME; ALTER TABLE spatial_ref_sys OWNER TO $DBUSERNAME;" | psql -d $DBNAME

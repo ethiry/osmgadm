@@ -27,7 +27,7 @@ is divided into following sections:
             </not>
         </condition>
     </fail>
-    <target depends="test,jar,javadoc" description="Build and test whole project." name="default"/>
+    <target depends="test,jar" description="Build and test whole project." name="default"/>
     <!-- 
                 ======================
                 INITIALIZATION SECTION 
@@ -164,7 +164,7 @@ is divided into following sections:
             </and>
         </condition>
         <property name="javac.debug" value="true"/>
-        <property name="javadoc.preview" value="true"/>
+        <property name="javadoc.preview" value="false"/>
         <property name="application.args" value=""/>
         <property name="source.encoding" value="${file.encoding}"/>
         <property name="runtime.encoding" value="${source.encoding}"/>
